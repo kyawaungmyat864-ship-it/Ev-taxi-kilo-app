@@ -3,105 +3,238 @@
 <html lang="my">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EV Taxi Kilo</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EV Taxi Kilo GPS</title>
 <style>
-body {
-  font-family: Arial, sans-serif;
-  background: #f1f5f9;
-  margin: 0;
-  padding: 20px;
+*{box-sizing:border-box}
+body{
+  margin:0;padding:18px;
+  background:#eef3f8;
+  font-family:Arial,sans-serif;
 }
-.container {
-  max-width: 420px;
-  margin: 30px auto;
-  background: white;
-  padding: 24px;
-  border-radius: 18px;
-  box-shadow: 0 4px 15px #0002;
+.card{
+  max-width:440px;margin:20px auto;
+  padding:24px;background:white;
+  border-radius:20px;
+  box-shadow:0 5px 20px #0002;
 }
-h2 { text-align: center; color: #087b50; }
-label { font-weight: bold; }
-input {
-  width: 100%;
-  box-sizing: border-box;
-  padding: 14px;
-  margin: 12px 0;
-  border: 1px solid #ccc;
-  border-radius: 10px;
-  font-size: 18px;
+h2{text-align:center;color:#087b50}
+.status{
+  padding:12px;background:#edf8f2;
+  border-radius:10px;text-align:center;
+  color:#087b50;margin:15px 0;
 }
-button {
-  width: 100%;
-  padding: 14px;
-  border: 0;
-  border-radius: 10px;
-  background: #087b50;
-  color: white;
-  font-size: 18px;
-  margin-top: 10px;
+.distance{
+  font-size:42px;font-weight:bold;
+  text-align:center;color:#087b50;
 }
-.reset { background: #64748b; }
-.result {
-  background: #e8f7ef;
-  padding: 18px;
-  margin-top: 20px;
-  border-radius: 12px;
-  text-align: center;
+.unit{text-align:center;color:#666}
+.row{
+  display:flex;justify-content:space-between;
+  padding:13px 0;border-bottom:1px solid #eee;
+  gap:10px;
 }
-.amount {
-  font-size: 28px;
-  color: #087b50;
-  font-weight: bold;
+.total{
+  margin-top:20px;padding:20px;
+  background:#e7f7ef;border-radius:14px;
+  text-align:center;
+}
+.amount{
+  font-size:32px;font-weight:bold;
+  color:#087b50;margin-top:10px;
+}
+button{
+  width:100%;padding:15px;
+  border:0;border-radius:10px;
+  font-size:18px;color:white;
+  margin-top:12px;
+}
+.start{background:#087b50}
+.stop{background:#dc3545}
+.reset{background:#64748b}
+button:disabled{opacity:.5}
+.note{
+  font-size:13px;color:#666;
+  line-height:1.6;margin-top:16px;
 }
 </style>
 </head>
 <body>
-<div class="container">
+<div class="card">
 <h2>🚕 EV TAXI KILO</h2>
-<p style="text-align:center">ကိုယ်ပိုင် Taxi Kilo Calculator</p>
+<div class="status" id="status">ခရီးစဉ် စတင်ရန် အသင့်ဖြစ်ပါပြီ</div>
 
-<label>ခရီးအကွာအဝေး (KM)</label>
-<input type="number" id="km" placeholder="ကီလို ထည့်ပါ" min="0" step="any">
+<p style="text-align:center">ခရီးအကွာအဝေး</p>
+<div class="distance" id="km">0.00</div>
+<div class="unit">Kilometers (KM)</div>
 
-<label>စတက်ခ (ကျပ်)</label>
-<input type="number" id="start" value="7000">
+<div class="row">
+<span>စတက်ခ</span><b>7,000 ကျပ်</b>
+</div>
+<div class="row">
+<span>တစ်ကီလိုနှုန်း</span><b>1,200 ကျပ်</b>
+</div>
+<div class="row">
+<span>ခရီးအကွာအဝေးခ</span>
+<b id="travel">0 ကျပ်</b>
+</div>
 
-<label>၁ ကီလိုနှုန်း (ကျပ်)</label>
-<input type="number" id="rate" value="1200">
+<div class="total">
+<div>စုစုပေါင်း ကျသင့်ငွေ</div>
+<div class="amount" id="total">7,000 ကျပ်</div>
+</div>
 
-<button onclick="calculate()">တွက်ချက်မယ်</button>
-<button class="reset" onclick="resetForm()">ပြန်စမယ်</button>
+<button class="start" id="start" onclick="startTrip()">
+▶ START ခရီးစတင်မယ်
+</button>
+<button class="stop" id="stop" onclick="stopTrip()" disabled>
+■ STOP ခရီးပြီးဆုံးမယ်
+</button>
+<button class="reset" onclick="resetTrip()">
+ပြန်စမယ်
+</button>
 
-<div class="result">
-<p>ကျသင့်ငွေ စုစုပေါင်း</p>
-<div class="amount" id="total">0 ကျပ်</div>
+<div class="note" id="gps">
+GPS: ခွင့်ပြုချက် မရသေးပါ
+<br>GPS အသုံးပြုရန် Location Permission ခွင့်ပြုပေးပါ။
 </div>
 </div>
 
 <script>
-function calculate() {
-  const km = Number(document.getElementById("km").value);
-  const start = Number(document.getElementById("start").value);
-  const rate = Number(document.getElementById("rate").value);
+const START_FEE = 7000;
+const RATE = 1200;
 
-  if (document.getElementById("km").value === "" ||
-      km < 0 || start < 0 || rate < 0) {
-    alert("အချက်အလက် မှန်ကန်စွာ ထည့်ပါ");
-    return;
-  }
+let distance = 0;
+let previous = null;
+let watchId = null;
+let active = false;
+let hasStarted = false;
 
-  const total = start + (km * rate);
-
-  document.getElementById("total").textContent =
-    Math.round(total).toLocaleString("en-US") + " ကျပ်";
+function metersBetween(a,b){
+ const R = 6371000;
+ const rad = x => x*Math.PI/180;
+ const dLat = rad(b.latitude-a.latitude);
+ const dLon = rad(b.longitude-a.longitude);
+ const x = Math.sin(dLat/2)**2 +
+ Math.cos(rad(a.latitude))*Math.cos(rad(b.latitude))*
+ Math.sin(dLon/2)**2;
+ return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
 }
 
-function resetForm() {
-  document.getElementById("km").value = "";
-  document.getElementById("start").value = 7000;
-  document.getElementById("rate").value = 1200;
-  document.getElementById("total").textContent = "0 ကျပ်";
+function update(){
+ const travel = Math.round(distance/1000*RATE);
+ const total = hasStarted ? START_FEE+travel : 0;
+
+ document.getElementById("km").textContent =
+ (distance/1000).toFixed(2);
+
+ document.getElementById("travel").textContent =
+ travel.toLocaleString()+" ကျပ်";
+
+ document.getElementById("total").textContent =
+ total.toLocaleString()+" ကျပ်";
+}
+
+function gpsError(error){
+ const messages = {
+ 1:"GPS အသုံးပြုခွင့် ပိတ်ထားပါတယ်။",
+ 2:"GPS တည်နေရာ မရနိုင်သေးပါ။",
+ 3:"GPS အချိန်ကုန်သွားပါပြီ။"
+ };
+ document.getElementById("gps").textContent =
+ messages[error.code] || "GPS အမှားရှိနေပါတယ်။";
+}
+
+function startTrip(){
+ if(!navigator.geolocation){
+  alert("ဒီ Browser မှာ GPS မရနိုင်ပါ။");
+  return;
+ }
+ if(active)return;
+
+ active=true;
+ hasStarted=true;
+ previous=null;
+ distance=0;
+
+ document.getElementById("start").disabled=true;
+ document.getElementById("stop").disabled=false;
+ document.getElementById("status").textContent=
+ "🟢 ခရီးစဉ် စတင်နေပါပြီ";
+
+ update();
+
+ watchId=navigator.geolocation.watchPosition(
+  position=>{
+   const p=position.coords;
+
+   if(p.accuracy>35){
+    document.getElementById("gps").textContent=
+    "GPS အချက်ပြမှု အားနည်းနေပါတယ်။ ပိုမိုကောင်းတဲ့ GPS Signal ကို စောင့်နေပါတယ်။";
+    return;
+   }
+
+   const current={
+    latitude:p.latitude,
+    longitude:p.longitude
+   };
+
+   document.getElementById("gps").textContent=
+   "GPS အလုပ်လုပ်နေပါပြီ။ Accuracy: "+
+   Math.round(p.accuracy)+" m";
+
+   if(previous){
+    const d=metersBetween(previous,current);
+
+    if(d>=5 && d<=300){
+     distance+=d;
+    }
+   }
+
+   previous=current;
+   update();
+  },
+  gpsError,
+  {
+   enableHighAccuracy:true,
+   maximumAge:0,
+   timeout:20000
+  }
+ );
+}
+
+function stopTrip(){
+ if(!active)return;
+
+ active=false;
+
+ if(watchId!==null){
+  navigator.geolocation.clearWatch(watchId);
+  watchId=null;
+ }
+
+ document.getElementById("start").disabled=false;
+ document.getElementById("stop").disabled=true;
+ document.getElementById("status").textContent=
+ "🔴 ခရီးစဉ် ပြီးဆုံးပါပြီ";
+
+ document.getElementById("gps").textContent=
+ "ခရီးစဉ် ရပ်ထားပါပြီ။";
+
+ update();
+}
+
+function resetTrip(){
+ if(active)stopTrip();
+
+ distance=0;
+ previous=null;
+ hasStarted=false;
+
+ document.getElementById("status").textContent=
+ "ခရီးစဉ် စတင်ရန် အသင့်ဖြစ်ပါပြီ";
+
+ update();
 }
 </script>
 </body>
