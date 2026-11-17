@@ -1,106 +1,4 @@
 
-<!DOCTYPE html>
-<html lang="my">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>EV Taxi Kilo GPS</title>
-<style>
-*{box-sizing:border-box}
-body{
-  margin:0;padding:18px;
-  background:#eef3f8;
-  font-family:Arial,sans-serif;
-}
-.card{
-  max-width:440px;margin:20px auto;
-  padding:24px;background:white;
-  border-radius:20px;
-  box-shadow:0 5px 20px #0002;
-}
-h2{text-align:center;color:#087b50}
-.status{
-  padding:12px;background:#edf8f2;
-  border-radius:10px;text-align:center;
-  color:#087b50;margin:15px 0;
-}
-.distance{
-  font-size:42px;font-weight:bold;
-  text-align:center;color:#087b50;
-}
-.unit{text-align:center;color:#666}
-.row{
-  display:flex;justify-content:space-between;
-  padding:13px 0;border-bottom:1px solid #eee;
-  gap:10px;
-}
-.total{
-  margin-top:20px;padding:20px;
-  background:#e7f7ef;border-radius:14px;
-  text-align:center;
-}
-.amount{
-  font-size:32px;font-weight:bold;
-  color:#087b50;margin-top:10px;
-}
-button{
-  width:100%;padding:15px;
-  border:0;border-radius:10px;
-  font-size:18px;color:white;
-  margin-top:12px;
-}
-.start{background:#087b50}
-.stop{background:#dc3545}
-.reset{background:#64748b}
-button:disabled{opacity:.5}
-.note{
-  font-size:13px;color:#666;
-  line-height:1.6;margin-top:16px;
-}
-</style>
-</head>
-<body>
-<div class="card">
-<h2>🚕 EV TAXI KILO</h2>
-<div class="status" id="status">ခရီးစဉ် စတင်ရန် အသင့်ဖြစ်ပါပြီ</div>
-
-<p style="text-align:center">ခရီးအကွာအဝေး</p>
-<div class="distance" id="km">0.00</div>
-<div class="unit">Kilometers (KM)</div>
-
-<div class="row">
-<span>စတက်ခ</span><b>7,000 ကျပ်</b>
-</div>
-<div class="row">
-<span>တစ်ကီလိုနှုန်း</span><b>1,200 ကျပ်</b>
-</div>
-<div class="row">
-<span>ခရီးအကွာအဝေးခ</span>
-<b id="travel">0 ကျပ်</b>
-</div>
-
-<div class="total">
-<div>စုစုပေါင်း ကျသင့်ငွေ</div>
-<div class="amount" id="total">7,000 ကျပ်</div>
-</div>
-
-<button class="start" id="start" onclick="startTrip()">
-▶ START ခရီးစတင်မယ်
-</button>
-<button class="stop" id="stop" onclick="stopTrip()" disabled>
-■ STOP ခရီးပြီးဆုံးမယ်
-</button>
-<button class="reset" onclick="resetTrip()">
-ပြန်စမယ်
-</button>
-
-<div class="note" id="gps">
-GPS: ခွင့်ပြုချက် မရသေးပါ
-<br>GPS အသုံးပြုရန် Location Permission ခွင့်ပြုပေးပါ။
-</div>
-</div>
-
-<script>
 const START_FEE = 7000;
 const RATE = 1200;
 
@@ -110,132 +8,149 @@ let watchId = null;
 let active = false;
 let hasStarted = false;
 
-function metersBetween(a,b){
- const R = 6371000;
- const rad = x => x*Math.PI/180;
- const dLat = rad(b.latitude-a.latitude);
- const dLon = rad(b.longitude-a.longitude);
- const x = Math.sin(dLat/2)**2 +
- Math.cos(rad(a.latitude))*Math.cos(rad(b.latitude))*
- Math.sin(dLon/2)**2;
- return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
+function metersBetween(a, b) {
+  const R = 6371000;
+  const rad = x => x * Math.PI / 180;
+  const dLat = rad(b.latitude - a.latitude);
+  const dLon = rad(b.longitude - a.longitude);
+
+  const x = Math.sin(dLat / 2) ** 2 +
+    Math.cos(rad(a.latitude)) *
+    Math.cos(rad(b.latitude)) *
+    Math.sin(dLon / 2) ** 2;
+
+  return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
 }
 
-function update(){
- const travel = Math.round(distance/1000*RATE);
- const total = hasStarted ? START_FEE+travel : 0;
+function update() {
+  const travel = Math.round(distance / 1000 * RATE);
+  const total = hasStarted ? START_FEE + travel : 0;
 
- document.getElementById("km").textContent =
- (distance/1000).toFixed(2);
+  document.getElementById("km").textContent =
+    (distance / 1000).toFixed(2);
 
- document.getElementById("travel").textContent =
- travel.toLocaleString()+" ကျပ်";
+  document.getElementById("travel").textContent =
+    travel.toLocaleString() + " ကျပ်";
 
- document.getElementById("total").textContent =
- total.toLocaleString()+" ကျပ်";
+  document.getElementById("total").textContent =
+    total.toLocaleString() + " ကျပ်";
 }
 
-function gpsError(error){
- const messages = {
- 1:"GPS အသုံးပြုခွင့် ပိတ်ထားပါတယ်။",
- 2:"GPS တည်နေရာ မရနိုင်သေးပါ။",
- 3:"GPS အချိန်ကုန်သွားပါပြီ။"
- };
- document.getElementById("gps").textContent =
- messages[error.code] || "GPS အမှားရှိနေပါတယ်။";
+function gpsError(error) {
+  const messages = {
+    1: "GPS ခွင့်ပြုချက် မရပါ။",
+    2: "GPS တည်နေရာ မရနိုင်သေးပါ။",
+    3: "GPS အချိန်ကုန်သွားပါပြီ။"
+  };
+
+  document.getElementById("gps").textContent =
+    messages[error.code] || "GPS အမှားရှိနေပါတယ်။";
 }
 
-function startTrip(){
- if(!navigator.geolocation){
-  alert("ဒီ Browser မှာ GPS မရနိုင်ပါ။");
-  return;
- }
- if(active)return;
-
- active=true;
- hasStarted=true;
- previous=null;
- distance=0;
-
- document.getElementById("start").disabled=true;
- document.getElementById("stop").disabled=false;
- document.getElementById("status").textContent=
- "🟢 ခရီးစဉ် စတင်နေပါပြီ";
-
- update();
-
- watchId=navigator.geolocation.watchPosition(
-  position=>{
-   const p=position.coords;
-
-   if(p.accuracy>35){
-    document.getElementById("gps").textContent=
-    "GPS အချက်ပြမှု အားနည်းနေပါတယ်။ ပိုမိုကောင်းတဲ့ GPS Signal ကို စောင့်နေပါတယ်။";
+function startTrip() {
+  if (!navigator.geolocation) {
+    alert("ဒီ Browser မှာ GPS မရနိုင်ပါ။");
     return;
-   }
-
-   const current={
-    latitude:p.latitude,
-    longitude:p.longitude
-   };
-
-   document.getElementById("gps").textContent=
-   "GPS အလုပ်လုပ်နေပါပြီ။ Accuracy: "+
-   Math.round(p.accuracy)+" m";
-
-   if(previous){
-    const d=metersBetween(previous,current);
-
-    if(d>=5 && d<=300){
-     distance+=d;
-    }
-   }
-
-   previous=current;
-   update();
-  },
-  gpsError,
-  {
-   enableHighAccuracy:true,
-   maximumAge:0,
-   timeout:20000
   }
- );
+
+  if (active) return;
+
+  active = true;
+  hasStarted = true;
+  previous = null;
+  distance = 0;
+
+  document.getElementById("start").disabled = true;
+  document.getElementById("stop").disabled = false;
+  document.getElementById("status").textContent =
+    "🟢 ခရီးစဉ် စတင်နေပါပြီ";
+
+  document.getElementById("gps").textContent =
+    "GPS တည်နေရာ ရယူနေပါတယ်။";
+
+  update();
+
+  watchId = navigator.geolocation.watchPosition(
+    position => {
+      if (!active) return;
+
+      const p = position.coords;
+
+      if (p.accuracy > 50) {
+        document.getElementById("gps").textContent =
+          "GPS Signal အားနည်းနေပါတယ်။";
+        return;
+      }
+
+      const current = {
+        latitude: p.latitude,
+        longitude: p.longitude
+      };
+
+      document.getElementById("gps").textContent =
+        "GPS အလုပ်လုပ်နေပါပြီ။ Accuracy: " +
+        Math.round(p.accuracy) + " m";
+
+      if (previous === null) {
+        previous = current;
+        return;
+      }
+
+      const d = metersBetween(previous, current);
+
+      if (d >= 3 && d <= 150) {
+        distance += d;
+        previous = current;
+        update();
+      } else if (d > 150) {
+        previous = current;
+      }
+
+    },
+    gpsError,
+    {
+      enableHighAccuracy: true,
+      maximumAge: 0,
+      timeout: 20000
+    }
+  );
 }
 
-function stopTrip(){
- if(!active)return;
+function stopTrip() {
+  if (!active) return;
 
- active=false;
+  active = false;
 
- if(watchId!==null){
-  navigator.geolocation.clearWatch(watchId);
-  watchId=null;
- }
+  if (watchId !== null) {
+    navigator.geolocation.clearWatch(watchId);
+    watchId = null;
+  }
 
- document.getElementById("start").disabled=false;
- document.getElementById("stop").disabled=true;
- document.getElementById("status").textContent=
- "🔴 ခရီးစဉ် ပြီးဆုံးပါပြီ";
+  document.getElementById("start").disabled = false;
+  document.getElementById("stop").disabled = true;
+  document.getElementById("status").textContent =
+    "🔴 ခရီးစဉ် ပြီးဆုံးပါပြီ";
 
- document.getElementById("gps").textContent=
- "ခရီးစဉ် ရပ်ထားပါပြီ။";
+  document.getElementById("gps").textContent =
+    "ခရီးစဉ် ရပ်ထားပါပြီ။";
 
- update();
+  update();
 }
 
-function resetTrip(){
- if(active)stopTrip();
+function resetTrip() {
+  if (active) stopTrip();
 
- distance=0;
- previous=null;
- hasStarted=false;
+  distance = 0;
+  previous = null;
+  hasStarted = false;
 
- document.getElementById("status").textContent=
- "ခရီးစဉ် စတင်ရန် အသင့်ဖြစ်ပါပြီ";
+  document.getElementById("status").textContent =
+    "ခရီးစဉ် စတင်ရန် အသင့်ဖြစ်ပါပြီ";
 
- update();
+  document.getElementById("gps").textContent =
+    "GPS: ခွင့်ပြုချက် မရသေးပါ";
+
+  update();
 }
-</script>
-</body>
-</html>
+
+update();
